@@ -6,6 +6,9 @@ import asyncio
 import logging
 import json
 from datetime import datetime
+from discovery_service import DiscoveryService
+from device_classifier import DeviceClassifier
+from device_handlers import DeviceHandlerRegistry, TVHandler, SpeakerHandler, SmartDeviceHandler
 
 # Import configuration FIRST (validates on import)
 from config import settings
@@ -41,6 +44,14 @@ scanner = NetworkScanner()
 router = TPLinkRouter(settings.router_ip, settings.router_password, settings.router_username)
 tv = SamsungTV()
 alexa = AlexaDiscovery()
+# Semi-Dynamic Discovery Services
+discovery_service = DiscoveryService()
+device_registry = DeviceHandlerRegistry()
+
+# Registrar handlers (conectar con integraciones existentes)
+device_registry.register(TVHandler(samsung_tv_instance=tv))
+device_registry.register(SpeakerHandler())
+device_registry.register(SmartDeviceHandler())
 ai_provider = get_ai_provider()  # NEW - Auto-selects Groq or Gemini
 automations = AutomationEngine()
 manager = ConnectionManager(heartbeat_interval=30)
@@ -125,6 +136,51 @@ async def scan_loop():
         except Exception as e:
             logger.error(f"Alexa discovery error: {e}")
 
+        # 6.5. Semi-Dynamic Discovery (mDNS + SSDP)
+        try:
+            discovered = await discovery_service.discover()
+            
+            # Clasificar y enriquecer dispositivos
+            for device in discovered:
+                # Clasificar tipo automáticamente
+                device_type = DeviceClassifier.classify(
+                    hostname=device.hostname,
+                    mac=None,
+                    services=device.services,
+                    metadata=device.metadata
+                )
+                
+                # Buscar en dispositivos ARP para matchear IP
+                matched_device = next(
+                    (d for d in merged if d.get("ip") == device.ip), 
+                    None
+                )
+                
+                if matched_device:
+                    # Enriquecer dispositivo con discovery info
+                    matched_device["discovered_type"] = device_type
+                    matched_device["discovery_protocol"] = device.protocol
+                    matched_device["discovery_services"] = device.services
+                    
+                    logger.info(f"✨ Enriched device: {device.ip} → {device_type}")
+                else:
+                    # Dispositivo nuevo solo de discovery (sin ARP)
+                    new_device = {
+                        "ip": device.ip,
+                        "hostname": device.hostname or "Unknown",
+                        "discovered_type": device_type,
+                        "discovery_protocol": device.protocol,
+                        "discovery_services": device.services,
+                        "online": True,
+                        "source": "discovery"
+                    }
+                    merged.append(new_device)
+                    state["devices"] = merged  # Actualizar state con nuevos devices
+                    logger.info(f"🆕 New device from discovery: {device.ip} → {device_type}")
+        
+        except Exception as e:
+            logger.error(f"Discovery error: {e}")
+
         # 7. Run automations
         try:
             await automations.check(merged, state["tv"], state["alexa"])
@@ -199,9 +255,19 @@ def _merge_devices(arp: List[Dict], router_clients: List[Dict]) -> List[Dict]:
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     logger.info("🏠 Casa Intelligence backend starting...")
+    
+    # Iniciar mDNS discovery
+    discovery_service.start_mdns()
+    logger.info("🚀 Discovery service started (mDNS + SSDP)")
+    
     task = asyncio.create_task(scan_loop())
     yield
     task.cancel()
+    
+    # Detener mDNS
+    discovery_service.stop_mdns()
+    logger.info("🛑 Discovery service stopped")
+    
     router.logout()
     logger.info("👋 Shutdown complete")
 
@@ -330,6 +396,44 @@ async def get_insights():
             "cached": False,
             "error": str(e)
         }
+
+
+@app.get("/api/discover")
+async def manual_discover():
+    """
+    Endpoint para forzar descubrimiento manual de dispositivos.
+    Útil para debugging o forzar escaneo bajo demanda.
+    """
+    try:
+        devices = await discovery_service.discover()
+        
+        classified = []
+        for device in devices:
+            device_type = DeviceClassifier.classify(
+                hostname=device.hostname,
+                mac=None,
+                services=device.services,
+                metadata=device.metadata
+            )
+            
+            classified.append({
+                "ip": device.ip,
+                "hostname": device.hostname,
+                "type": device_type,
+                "protocol": device.protocol,
+                "services": device.services,
+                "metadata": device.metadata,
+            })
+        
+        return {
+            "success": True,
+            "count": len(classified),
+            "devices": classified,
+        }
+    
+    except Exception as e:
+        logger.error(f"Discovery endpoint error: {e}")
+        return {"success": False, "error": str(e)}
 
 
 @app.get("/api/automations")

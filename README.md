@@ -1,47 +1,62 @@
 # 🐍 Casa Intelligence — Backend (FastAPI)
 
-> **Motor de descubrimiento y automatización del hogar inteligente.**
+> Motor de descubrimiento y automatización del hogar inteligente.
 
-Este es el núcleo de **Casa Intelligence**, encargado de escanear la red local, interactuar con APIs de hardware (TP-Link, Samsung, Amazon) y procesar insights con Google Gemini AI.
+## ✅ Qué construí y por qué
 
-## 🛠️ Tecnologías Utilizadas
+**Objetivo:** Reducir hardcodeo sin reescribir todo el sistema.  
+**Solución:** Descubrimiento **semi-dinámico** con mDNS + SSDP, manteniendo ARP y las integraciones existentes.
 
-- **Framework:** FastAPI (Python 3.12+)
-- **Tiempo Real:** WebSockets nativos para streaming de estado a dispositivos.
-- **Descubrimiento de Red:** 
-  - **Ping Sweep Activo:** Inundación controlada de la subred para forzar el registro ARP.
-  - **Windows ARP:** Extracción de tablas de direcciones MAC y mapeo de vendedores.
-- **Integraciones:** 
-  - `samsungtvws[encrypted]` para control de TVs Samsung 2023.
-  - `google-genai` (Gemini 2.0 Flash) para análisis de seguridad y patrones.
-  - SSDP (Simple Service Discovery Protocol) para encontrar hardware en red.
-
-## 🚀 Instalación y Uso
-
-1. **Instalar dependencias:**
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-2. **Configurar el entorno:**
-   Crea un archivo `.env` o edita el existente:
-   ```env
-   GEMINI_API_KEY=AIzaSy...
-   ROUTER_IP=192.168.0.1
-   ROUTER_PASSWORD=tu_password
-   ```
-
-3. **Arrancar el servidor:**
-   ```bash
-   python -m uvicorn main:app --reload --port 8002
-   ```
-
-## 🔍 Funcionalidades Clave
-
-- **Scan Loop:** Un bucle de fondo que actualiza el estado de la red cada 15 segundos sin bloquear la API.
-- **Discovery Granular:** Detecta el Echo Dot (vía MAC OUI) y la TV (vía SSDP) de forma autónoma.
-- **Motor de Reglas:** Lógica extensible para disparar alertas cuando ocurren eventos en la red (ej: dispositivo desconocido detectado).
-- **Gemini Insights:** Punto final `/api/insights` que envía el snapshot de la red a la IA para generar consejos de seguridad.
+Esto permite detectar dispositivos automáticamente en la red local, enriquecer el estado actual y seguir usando Samsung TV, Alexa y router como antes.
 
 ---
+
+## 🔍 Descubrimiento actual
+
+- **ARP + Router API:** base confiable para presencia/estado.
+- **mDNS (zeroconf):** detecta servicios tipo Chromecast/Google Home/AirPlay.
+- **SSDP/UPnP (ssdpy):** detecta TVs y media servers.
+- **Clasificación simple:** hostname + vendor → `tv` | `speaker` | `smart_device` | `unknown`.
+- **Mini‑plugins:** handlers simples por tipo (TV, speaker, smart device).
+
+---
+
+## 🧩 Integraciones existentes (se mantienen)
+
+- **Samsung TV:** `samsungtvws[encrypted]`
+- **Alexa (detección):** por red local + UI TTS (demo)
+- **Router TP‑Link:** cliente DHCP + estado de red
+- **IA:** Groq como proveedor principal con fallback
+
+---
+
+## 🚀 Instalación y uso
+
+```bash
+pip install -r requirements.txt
+python -m uvicorn main:app --port 8000
+```
+
+---
+
+## 🔗 Endpoints clave
+
+- `GET /api/devices` → Dispositivos detectados + enrichment
+- `GET /api/discover` → Forzar discovery manual (mDNS + SSDP)
+- `GET /api/insights` → Insights IA
+- `POST /api/tv/command` → Control TV
+- `POST /api/alexa/tts` → Demo TTS Alexa
+
+---
+
+## 🛠️ Tecnologías
+
+- **FastAPI** + **Uvicorn**
+- **zeroconf** (mDNS)
+- **ssdpy** (SSDP)
+- **manuf** (MAC vendor)
+- **WebSockets** para updates en tiempo real
+
+---
+
 *Parte del Reto Técnico AdoptAI — Vibe Engineer Challenge*

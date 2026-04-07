@@ -10,10 +10,14 @@ aiohttp>=3.9.0
 websockets>=12.0
 
 # AI Providers
-groq>=0.4.0  # NEW - Groq API (fast, free, unlimited)
+groq>=0.4.0  # Groq API (fast, free, unlimited)
 
-# Security & Encryption (NEW)
+# Security & Encryption
 cryptography>=42.0.5
 
-# Structured Logging (NEW)
+# Structured Logging
 python-json-logger>=2.0.7
+
+# Semi-Dynamic Discovery (NEW)
+ssdpy>=0.4.1  # SSDP/UPnP discovery
+manuf>=1.1.5  # MAC vendor lookup
