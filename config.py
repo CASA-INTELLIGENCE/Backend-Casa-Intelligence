@@ -30,6 +30,8 @@ class Settings:
         self.samsung_tv_ip: str = os.getenv("SAMSUNG_TV_IP", "")
         self.amazon_email: str = os.getenv("AMAZON_EMAIL", "")
         self.amazon_password: str = os.getenv("AMAZON_PASSWORD", "")
+        self.alexa_email: str = os.getenv("AMAZON_EMAIL", "")  # Alias for consistency
+        self.alexa_password: str = os.getenv("AMAZON_PASSWORD", "")  # Alias for consistency
         self.gemini_api_key: str = os.getenv("GEMINI_API_KEY", "")
         self.encryption_key: str = os.getenv("ENCRYPTION_KEY", "")
         self.log_level: str = os.getenv("LOG_LEVEL", "INFO")

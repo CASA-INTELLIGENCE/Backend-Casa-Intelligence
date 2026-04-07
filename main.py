@@ -156,7 +156,7 @@ def _safe_find_tv(devices: List[Dict]) -> Optional[str]:
     SAMSUNG_OUI = {
         "00:12:47", "00:16:6C", "00:1D:A9", "00:21:19", "00:23:39",
         "0C:14:20", "2C:4D:54", "5C:F6:DC", "78:BD:BC", "8C:77:12",
-        "A4:08:F5", "B8:BC:1B", "CC:07:AB", "D0:22:BE", "DC:71:96",
+        "A4:08:F5", "B8:BC:1B", "B8:BC:5B", "CC:07:AB", "D0:22:BE", "DC:71:96",
         "F4:7B:5E", "FC:F1:36", "24:FB:65", "70:F9:27", "84:A4:66",
     }
     for d in devices:
@@ -257,6 +257,48 @@ async def tv_command(body: dict):
 @app.get("/api/alexa")
 async def get_alexa():
     return {"devices": state["alexa"]}
+
+
+@app.post("/api/alexa/tts")
+async def send_alexa_tts(payload: dict):
+    """
+    Send Text-to-Speech message to Alexa device.
+    
+    Note: This is a DEMO implementation. Real Amazon Alexa API integration
+    requires AMAZON_EMAIL and AMAZON_PASSWORD credentials plus the ha-philipsjs
+    library or similar.
+    
+    For production, implement using:
+    - ha-philipsjs for TTS
+    - Amazon Alexa API authentication
+    - Device-specific targeting
+    """
+    message = payload.get("message", "").strip()
+    
+    if not message:
+        raise HTTPException(status_code=400, detail="Message is required")
+    
+    # Check if real credentials are configured
+    has_credentials = bool(settings.alexa_email and settings.alexa_password)
+    
+    if has_credentials:
+        # TODO: Implement real TTS using ha-philipsjs or Amazon API
+        logger.info(f"📢 [DEMO] Would send TTS to Alexa: '{message}'")
+        return {
+            "success": True,
+            "message": message,
+            "mode": "demo",
+            "note": "Real Amazon API integration pending - credentials detected but API not implemented"
+        }
+    else:
+        # Simulate successful TTS for demo purposes
+        logger.info(f"📢 [SIMULATION] TTS message simulated: '{message}'")
+        return {
+            "success": True,
+            "message": message,
+            "mode": "simulation",
+            "note": "Configure AMAZON_EMAIL and AMAZON_PASSWORD in .env for real TTS"
+        }
 
 
 @app.get("/api/insights")
