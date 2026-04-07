@@ -1,0 +1,19 @@
+fastapi>=0.104.0
+uvicorn[standard]>=0.24.0
+python-dotenv>=1.0.0
+requests>=2.31.0
+httpx>=0.25.0
+samsungtvws[encrypted]>=2.6.0
+google-genai>=1.0.0
+zeroconf>=0.131.0
+aiohttp>=3.9.0
+websockets>=12.0
+
+# AI Providers
+groq>=0.4.0  # NEW - Groq API (fast, free, unlimited)
+
+# Security & Encryption (NEW)
+cryptography>=42.0.5
+
+# Structured Logging (NEW)
+python-json-logger>=2.0.7
