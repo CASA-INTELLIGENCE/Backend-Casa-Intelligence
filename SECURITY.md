@@ -72,16 +72,16 @@ AMAZON_PASSWORD=your_amazon_password
 
 ⚠️ **IMPORTANT:** The following credentials were exposed in your previous `.env`:
 
-1. **Gemini API Key:** `AIzaSyArT9tTmK9zWX9CH9qM6dggTHrMUt1uWPA`
+1. **Gemini API Key:** `XXX`
    - Action: Delete and create new at https://aistudio.google.com/app/apikey
 
-2. **Router Password:** `Silva06042004!`
+2. **Router Password:** `XXX`
    - Action: Change via router admin panel (http://192.168.0.1)
 
-3. **Amazon Password:** `St06042004!`
+3. **Amazon Password:** `XXX`
    - Action: Change at https://www.amazon.com/ap/forgotpassword
 
-4. **Email:** `svsilvat@gmail.com`
+4. **Email:** `XXX`
    - Action: No direct action, but be aware it was exposed
 
 ### Step 5: Verify Git Protection
